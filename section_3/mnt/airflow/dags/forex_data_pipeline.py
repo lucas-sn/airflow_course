@@ -7,6 +7,7 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.providers.http.sensors.http import HttpSensor
 from airflow.sensors.filesystem import FileSensor
+from airflow.operators.bash_operator import BashOperator
 
 default_args = {
     "owner": "airflow",
@@ -67,3 +68,9 @@ with DAG('forex_data_pipeline',
         task_id='downloading_rates',
         python_callable=download_rates
     )
+
+    saving_rates = BashOperator(
+        task_id='saving_rates',
+        bash_command="""
+        hdfs dfs -mkdir -p /forex && \
+        hdfs dfs -put -f $AIRFLOW_HOME/dags/files/forex_rates.json /forex""")
