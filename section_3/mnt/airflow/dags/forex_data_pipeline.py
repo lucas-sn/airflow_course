@@ -4,10 +4,11 @@ from datetime import datetime, timedelta
 
 import requests
 from airflow import DAG
+from airflow.operators.bash_operator import BashOperator
 from airflow.operators.python import PythonOperator
+from airflow.providers.apache.hive.operators.hive import HiveOperator
 from airflow.providers.http.sensors.http import HttpSensor
 from airflow.sensors.filesystem import FileSensor
-from airflow.operators.bash_operator import BashOperator
 
 default_args = {
     "owner": "airflow",
@@ -73,4 +74,25 @@ with DAG('forex_data_pipeline',
         task_id='saving_rates',
         bash_command="""
         hdfs dfs -mkdir -p /forex && \
-        hdfs dfs -put -f $AIRFLOW_HOME/dags/files/forex_rates.json /forex""")
+        hdfs dfs -put -f $AIRFLOW_HOME/dags/files/forex_rates.json /forex"""
+    )
+
+    creating_forex_rates_table = HiveOperator(
+        task_id='creating_forex_rates_table',
+        hive_cli_conn_id='hive_conn',
+        hql="""
+            CREATE EXTERNAL TABLE IF NOT EXISTS forex_rates(
+                base STRING,
+                last_update DATE,
+                eur DOUBLE,
+                usd DOUBLE,
+                nzd DOUBLE,
+                gbp DOUBLE,
+                jpy DOUBLE,
+                cad DOUBLE
+                )
+            ROW FORMAT DELIMITED
+            FIELDS TERMINATED BY ','
+            STORED AS TEXTFILE
+        """
+    )
