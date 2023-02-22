@@ -127,3 +127,4 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+section_3/mnt/airflow/dags/files/forex_rates.json
